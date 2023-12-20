@@ -35,11 +35,27 @@ def extract_info():
 
     # Read the image and perform OCR
     image = cv2.imdecode(numpy.fromstring(file.read(), numpy.uint8), cv2.IMREAD_UNCHANGED)
-    text = pytesseract.image_to_string(image)
+    
+    # do preprocessing for image so can easily read by tesseract
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    blur = cv2.GaussianBlur(gray, (5, 5), 0)
+    thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+    invert = cv2.bitwise_not(thresh)
+    kernel = numpy.ones((1, 1), numpy.uint8)
+    dilated = cv2.dilate(invert, kernel, iterations=2)
+
+    # save image to local
+    cv2.imwrite("image.jpg", gray)
+    cv2.imwrite("blur.jpg", blur)
+    cv2.imwrite("thresh.jpg", thresh)
+    cv2.imwrite("invert.jpg", invert)
+    cv2.imwrite("dilated.jpg", dilated)
+    
+    text = pytesseract.image_to_string(dilated)
 
     # Extract information from the text
-    sections = text.split("\n\n")
-    teks = sections[0]
+    # sections = text.split("\n\n")
+    # teks = sections[0]
     teks = text
 
     name_match = re.search(r'^([^\n]+)', teks)
